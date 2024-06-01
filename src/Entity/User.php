@@ -4,17 +4,29 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    public const ROLE_USER = 'ROLE_USER';
+    public const ROLE_ADMIN = 'ROLE_ADMIN';
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 180, unique: true)]
+    #[ORM\Column(length: 30, unique: true)]
+    #[Assert\Email(
+        message: 'The email {{ value }} is not a valid email.',
+    )]
     private ?string $email = null;
 
     #[ORM\Column(length: 180)]
@@ -25,7 +37,7 @@ class User
 
     #[ORM\Column(type: 'json')]
     private array $roles = [];
-    
+
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $password = null;
 
@@ -34,15 +46,17 @@ class User
 
     #[ORM\Column(length: 255)]
     private ?string $provider = null;
-    
+
     #[Gedmo\Timestampable(on: 'create')]
     #[ORM\Column(name: 'created_at', type: 'datetime')]
     private ?\DateTimeInterface $createdAt = null;
 
-    #[ORM\Column(name: 'deleted_at', type: 'datetime')]
-    private ?\DateTimeInterface $deletedAt = null;
 
-    
+    public function __construct()
+    {
+        $this->createdAt = new \DateTime();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -201,21 +215,25 @@ class User
     }
 
     /**
-     * @return \DateTimeInterface|null
+     * @see UserInterface
      */
-    public function getDeletedAt(): ?\DateTimeInterface
+    public function eraseCredentials(): void
     {
-        return $this->deletedAt;
+        // TODO: Implement eraseCredentials() method.
     }
 
     /**
-     * @param \DateTimeInterface|null $createdAt
+     * @see ToArray
      */
-    public function setDeletedAt(?\DateTimeInterface $deletedAt): void
+    public function toArray(): array
     {
-        $this->deletedAt = $deletedAt;
+        return [
+            'id' => $this->getId(),
+            'email' => $this->getEmail(),
+            'first_name' => $this->getFirstName(),
+            'last_name' => $this->getLastName(),
+            'full_name' => $this->getFullName(),
+            'roles' => $this->getRoles()
+        ];
     }
-
-    
-
 }
